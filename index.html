@@ -113,8 +113,8 @@
 
         .front-content {
             z-index: 2;
-            /* Ensures text doesn't bleed through on mobile 3D rendering */
-            transition: opacity 0.1s 0.3s; 
+            /* Ensures text smoothly fades away to prevent mobile bleed-through */
+            transition: opacity 0.5s ease-in-out; 
         }
 
         /* Hide front content completely when open to prevent mobile bleed-through */

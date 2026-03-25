@@ -127,6 +127,7 @@
             transform: rotateY(180deg); /* Left side content when open */
             background: #fdfbf7;
             border: 1px solid #e2e8f0;
+            position: relative; /* Make relative for absolutely positioned floating heads */
         }
 
         /* The Inside Right Page (Main Content) */
@@ -184,6 +185,19 @@
         .animate-pulse-soft {
             animation: pulse-soft 2s infinite;
         }
+
+        /* Funny head spin animations */
+        @keyframes funny-spin {
+            0% { transform: rotate(0deg) scale(1); }
+            50% { transform: rotate(180deg) scale(1.2); } /* Slightly zoom in halfway */
+            100% { transform: rotate(360deg) scale(1); }
+        }
+        
+        /* Different speeds and directions to make it look chaotic and funny */
+        .spin-funny-1 { animation: funny-spin 3.5s linear infinite; }
+        .spin-funny-2 { animation: funny-spin 4s linear infinite reverse; }
+        .spin-funny-3 { animation: funny-spin 3s linear infinite reverse; }
+        .spin-funny-4 { animation: funny-spin 4.5s linear infinite; }
     </style>
 </head>
 <body>
@@ -207,7 +221,18 @@
                 </div>
                 <!-- Inside of the flap (left side when open) -->
                 <div class="cover-back flex items-center justify-center p-8 text-center">
-                    <p class="font-handwriting text-2xl text-gray-400 rotate-[-10deg]">
+                    
+                    <!-- 4 Spinning Funny Heads -->
+                    <!-- Top Left -->
+                    <img src="head.jpg" class="absolute top-4 left-4 w-16 h-16 md:w-20 md:h-20 object-cover rounded-full border-2 border-dashed border-gray-400 spin-funny-1 shadow-md" alt="Rick's Floating Head" onerror="this.style.display='none'">
+                    <!-- Top Right -->
+                    <img src="head.jpg" class="absolute top-4 right-4 w-16 h-16 md:w-20 md:h-20 object-cover rounded-full border-2 border-dashed border-gray-400 spin-funny-2 shadow-md" alt="Rick's Floating Head" onerror="this.style.display='none'">
+                    <!-- Bottom Left -->
+                    <img src="head.jpg" class="absolute bottom-4 left-4 w-16 h-16 md:w-20 md:h-20 object-cover rounded-full border-2 border-dashed border-gray-400 spin-funny-3 shadow-md" alt="Rick's Floating Head" onerror="this.style.display='none'">
+                    <!-- Bottom Right -->
+                    <img src="head.jpg" class="absolute bottom-4 right-4 w-16 h-16 md:w-20 md:h-20 object-cover rounded-full border-2 border-dashed border-gray-400 spin-funny-4 shadow-md" alt="Rick's Floating Head" onerror="this.style.display='none'">
+
+                    <p class="font-handwriting text-2xl text-gray-400 rotate-[-10deg] relative z-10">
                         (Some beers oder was, alter?)
                     </p>
                 </div>

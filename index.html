@@ -1,0 +1,392 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Happy Birthday, Rick!</title>
+
+    <!-- Tailwind CSS for layout and utilities -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Google Fonts: Chewy for the funny front, Caveat for the handwritten message inside -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Caveat:wght@600&family=Chewy&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- Canvas Confetti Library -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <style>
+      body {
+        /* Prevent scrolling during animations */
+        overflow: hidden;
+        background-color: #1a202c;
+        background-image: radial-gradient(
+          circle at center,
+          #2d3748 0%,
+          #1a202c 100%
+        );
+      }
+
+      .font-funny {
+        font-family: "Chewy", cursive;
+      }
+      .font-handwriting {
+        font-family: "Caveat", cursive;
+      }
+
+      /* --- 3D Card Mechanics --- */
+      .perspective-wrapper {
+        perspective: 2500px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        width: 100vw;
+      }
+
+      .card-container {
+        position: relative;
+        width: 320px;
+        height: 480px;
+        transition: transform 1s ease-in-out;
+        transform-style: preserve-3d;
+        cursor: pointer;
+      }
+
+      /* Desktop: Shift right when open so both sides fit */
+      .card-container.is-open {
+        transform: translateX(160px);
+        cursor: default;
+      }
+
+      /* Mobile adjustments: Scale down and open horizontally */
+      @media (max-width: 640px) {
+        .card-container {
+          width: 280px;
+          height: 420px;
+        }
+        .card-container.is-open {
+          /* Shifts right to center the hinge, scales down so the 560px wide open card fits on the phone screen */
+          transform: translateX(70px) scale(0.6);
+        }
+      }
+
+      /* The Flipping Cover */
+      .cover {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        transform-origin: left center; /* Always open left-to-right now */
+        transition: transform 1s ease-in-out;
+        transform-style: preserve-3d;
+        z-index: 10;
+        border-radius: 12px;
+        box-shadow: 10px 10px 30px rgba(0, 0, 0, 0.5);
+      }
+
+      .card-container.is-open .cover {
+        transform: rotateY(-180deg);
+        box-shadow: -10px 10px 30px rgba(0, 0, 0, 0.4);
+      }
+
+      /* Cover Faces */
+      .cover-front,
+      .cover-back {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        backface-visibility: hidden;
+        border-radius: 12px;
+        overflow: hidden;
+      }
+
+      .cover-front {
+        background: linear-gradient(135deg, #00c6ff 0%, #0072ff 100%);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        padding: 1.5rem;
+        border: 4px solid #fff;
+      }
+
+      /* Pattern overlay for front */
+      .cover-front::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background-image: url("data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ffffff' fill-opacity='0.2' fill-rule='evenodd'%3E%3Ccircle cx='3' cy='3' r='3'/%3E%3Ccircle cx='13' cy='13' r='3'/%3E%3C/g%3E%3C/svg%3E");
+        z-index: 1;
+      }
+
+      .front-content {
+        z-index: 2;
+      }
+
+      .cover-back {
+        transform: rotateY(180deg); /* Left side content when open */
+        background: #fdfbf7;
+        border: 1px solid #e2e8f0;
+      }
+
+      /* The Inside Right Page (Main Content) */
+      .inside-page {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: #fffdf8;
+        border-radius: 12px;
+        z-index: 1;
+        box-shadow:
+          inset 0 0 40px rgba(0, 0, 0, 0.05),
+          5px 5px 20px rgba(0, 0, 0, 0.2);
+        padding: 1rem;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        border: 1px solid #e2e8f0;
+        overflow-y: auto;
+        overflow-x: hidden;
+      }
+
+      /* Polaroid Image Style */
+      .polaroid {
+        background: white;
+        padding: 10px 10px 20px 10px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        transform: rotate(-2deg);
+        margin-bottom: 0.75rem;
+        transition: transform 0.3s;
+      }
+      .polaroid:hover {
+        transform: rotate(1deg) scale(1.02);
+      }
+      .polaroid img {
+        width: 100%;
+        height: 150px;
+        object-fit: cover;
+        border: 1px solid #eee;
+      }
+
+      @media (max-width: 640px) {
+        .polaroid {
+          padding: 8px 8px 16px 8px;
+          margin-bottom: 0.5rem;
+        }
+        .polaroid img {
+          height: 120px;
+        }
+      }
+
+      /* Pulsing animation for the open button */
+      @keyframes pulse-soft {
+        0%,
+        100% {
+          transform: scale(1);
+        }
+        50% {
+          transform: scale(1.05);
+        }
+      }
+      .animate-pulse-soft {
+        animation: pulse-soft 2s infinite;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="perspective-wrapper">
+      <div class="card-container" id="birthdayCard">
+        <!-- Flap / Cover of the card -->
+        <div class="cover">
+          <!-- Front Design -->
+          <div class="cover-front">
+            <div class="front-content text-white">
+              <div class="text-6xl mb-4">🍻🌮🎉</div>
+              <h1 class="font-funny text-4xl leading-tight mb-2 drop-shadow-md">
+                TOP SECRET<br />BIRTHDAY FILE
+              </h1>
+              <p class="font-bold text-lg mb-8 drop-shadow">
+                You're not old, you're vintage. And vintage is cool.
+              </p>
+
+              <div
+                class="bg-white text-orange-500 font-funny text-2xl py-2 px-6 rounded-full shadow-lg animate-pulse-soft inline-block border-2 border-orange-200"
+              >
+                🎁 CLICK TO OPEN! 🎁
+              </div>
+            </div>
+          </div>
+          <!-- Inside of the flap (left side when open) -->
+          <div
+            class="cover-back flex items-center justify-center p-8 text-center"
+          >
+            <p class="font-handwriting text-2xl text-gray-400 rotate-[-10deg]">
+              (Some beers oder was, alter?)
+            </p>
+          </div>
+        </div>
+
+        <!-- Inside Right Page (The actual message and photo) -->
+        <div class="inside-page">
+          <div class="polaroid w-full max-w-[200px] shrink-0">
+            <!-- Make sure image_a85124.jpg is in the same folder as this HTML file -->
+            <img
+              src="image_a85124.jpg"
+              alt="Happy Birthday Rick"
+              onerror="
+                this.src =
+                  'https://images.unsplash.com/photo-1530103862676-de889f460d28?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80';
+                this.onerror = null;
+                console.log(
+                  'Local image not found, loaded fallback placeholder.',
+                );
+              "
+            />
+          </div>
+
+          <div
+            class="font-handwriting text-xl md:text-2xl text-gray-800 leading-tight text-center flex-grow flex flex-col justify-center shrink pb-2"
+          >
+            <p class="mb-2 text-red-600 font-bold text-2xl md:text-3xl">
+              Feliz cumpleaños, Rick!
+            </p>
+            <p class="text-gray-700 text-lg md:text-xl leading-snug">
+              Wir wish you all the best in your special day and that is full of
+              love, Essen, bebidas with your love ones! 🎉
+            </p>
+            <p class="mt-2 text-gray-700 text-lg md:text-xl leading-snug">
+              We hope to see you very soon to celebrate properly with a German
+              Bier, ja! 🍻
+            </p>
+            <p class="mt-2 text-gray-700 text-lg md:text-xl leading-snug">
+              Lots of love: 👦🏽 Marcos und Vici 👧🏻
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // Store AudioContext globally so it isn't recreated on every click (which browsers block)
+      let audioCtx;
+
+      // Synthesize a reliable "Happy Birthday" tune using Web Audio API
+      function playBirthdayTune() {
+        const AudioContextClass =
+          window.AudioContext || window.webkitAudioContext;
+        if (!AudioContextClass) return; // Browser doesn't support it
+
+        // Initialize AudioContext on first click
+        if (!audioCtx) {
+          audioCtx = new AudioContextClass();
+        }
+
+        // If the audio context is suspended (browser policy), resume it
+        if (audioCtx.state === "suspended") {
+          audioCtx.resume();
+        }
+
+        const mainGain = audioCtx.createGain();
+        mainGain.gain.value = 0.15; // Volume control
+        mainGain.connect(audioCtx.destination);
+
+        // Notes and durations for the first two lines of Happy Birthday
+        const notes = [
+          { f: 261.63, d: 0.2 }, // C4
+          { f: 261.63, d: 0.2 }, // C4
+          { f: 293.66, d: 0.4 }, // D4
+          { f: 261.63, d: 0.4 }, // C4
+          { f: 349.23, d: 0.4 }, // F4
+          { f: 329.63, d: 0.8 }, // E4
+
+          { f: 261.63, d: 0.2 }, // C4
+          { f: 261.63, d: 0.2 }, // C4
+          { f: 293.66, d: 0.4 }, // D4
+          { f: 261.63, d: 0.4 }, // C4
+          { f: 392.0, d: 0.4 }, // G4
+          { f: 349.23, d: 0.8 }, // F4
+        ];
+
+        let time = audioCtx.currentTime + 0.1;
+
+        notes.forEach((note) => {
+          const osc = audioCtx.createOscillator();
+          const noteGain = audioCtx.createGain();
+
+          osc.type = "triangle"; // Gives a nice, soft electronic music box feel
+          osc.frequency.value = note.f;
+
+          // Envelope to make notes sound distinct instead of a single drone
+          noteGain.gain.setValueAtTime(0, time);
+          noteGain.gain.linearRampToValueAtTime(1, time + 0.02);
+          noteGain.gain.exponentialRampToValueAtTime(
+            0.001,
+            time + note.d - 0.05,
+          );
+
+          osc.connect(noteGain);
+          noteGain.connect(mainGain);
+
+          osc.start(time);
+          osc.stop(time + note.d);
+
+          time += note.d;
+        });
+      }
+
+      // Handle Card Click
+      const card = document.getElementById("birthdayCard");
+      let isOpen = false;
+
+      card.addEventListener("click", () => {
+        if (!isOpen) {
+          // 1. Open the card
+          card.classList.add("is-open");
+
+          // 2. Play the tune
+          playBirthdayTune();
+
+          // 3. Fire Confetti
+          const duration = 3000;
+          const end = Date.now() + duration;
+
+          (function frame() {
+            confetti({
+              particleCount: 5,
+              angle: 60,
+              spread: 55,
+              origin: { x: 0, y: 0.6 },
+              colors: ["#ff0000", "#00ff00", "#0000ff", "#ffff00", "#ffa500"],
+            });
+            confetti({
+              particleCount: 5,
+              angle: 120,
+              spread: 55,
+              origin: { x: 1, y: 0.6 },
+              colors: ["#ff0000", "#00ff00", "#0000ff", "#ffff00", "#ffa500"],
+            });
+
+            if (Date.now() < end) {
+              requestAnimationFrame(frame);
+            }
+          })();
+
+          isOpen = true;
+        } else {
+          // Close the card
+          card.classList.remove("is-open");
+          isOpen = false;
+        }
+      });
+    </script>
+  </body>
+</html>
